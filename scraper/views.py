@@ -69,7 +69,7 @@ def csv_database_write(request):
     response['Content-Disposition'] = 'attachment; filename="csv_dates_dbase_write.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['date', 'this_year', 'last_yeat', 'difference', 'absolute'])
+    writer.writerow(['date', 'this_year', 'last_year', 'difference', 'absolute'])
 
     for date in dates:
         writer.writerow([date.date, date.today, date.year_ago, date.difference, date.absolute])

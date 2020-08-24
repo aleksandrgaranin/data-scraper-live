@@ -69,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'data_scraper.wsgi.application'
+WSGI_APPLICATION = 'datascraper.wsgi.application'
 
 
 # Database
