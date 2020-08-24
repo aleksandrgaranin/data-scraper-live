@@ -1,1 +1,1 @@
-web: gunicorn datascraper.wsgi --log-file-
+web: gunicorn datascraper.wsgi --log-file -
