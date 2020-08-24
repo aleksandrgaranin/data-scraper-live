@@ -26,7 +26,7 @@ SECRET_KEY = 'krq0tt4sp@s$ji6+v1d_s(l8@_(53e*xj2^iu+m5l+p6g&i89&'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['tsa-data-scraper.herokuapp.com', '127.0.0.1']
+ALLOWED_HOSTS = ['tsa-data-scraper.herokuapp.com']
 
 
 # Application definition
