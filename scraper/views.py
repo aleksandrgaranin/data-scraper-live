@@ -59,7 +59,12 @@ def scrape(request):
                 abs_diff = difference - round(float((today_day_before / year_ago_day_before) * 100),2) 
                 abs_diff = round(abs_diff, 2)
 
-            Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference,absolute=abs_diff)
+            num_results = Date.objects.filter(date = date).count()
+            
+            if num_results >=1:
+                pass
+            else:
+                Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference,absolute=abs_diff)
         return HttpResponseRedirect('/')
     else:
         data_all = Date.objects.all()
