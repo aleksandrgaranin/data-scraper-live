@@ -4,14 +4,14 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponseRedirect,HttpResponse
 from .models import Date
 import csv
-import sqlite3
+
 
 
 # Create your views here.
 
 def scrape(request):
     if request.method == "POST":
-
+        
         page = requests.get('https://www.tsa.gov/coronavirus/passenger-throughput')
         soup = BeautifulSoup(page.text, 'html.parser')
 
@@ -28,26 +28,38 @@ def scrape(request):
                 rows.remove(row)      
             z=z+1
         
+        rows = rows[::-1]
+
         for i in range(z):
-            date_raw = rows[i][0].replace("/","")
-            d="0"
-            if len(date_raw)==7:
-                d = d+date_raw
-                y = d[4:]
-                date_mod = y + "-" +d[:2] + "-" + d[2:4]
-            elif len(date_raw)==6:
-                dat = date_raw[0]+"0"+date_raw[2:] 
-                d = d+dat
-                date_mod = y + "-" +d[:2] + "-" + d[3:5]
+            date_raw = rows[ i ][ 0 ].replace("/","")
+            d = "0"
+            if len(date_raw) == 7:
+                d = d + date_raw
+                y = d[ 4: ]
+                date_mod = y + "-" + d[:2 ] + "-" + d[ 2:4 ]
+            elif len(date_raw) == 6:                
+                dat = d + date_raw[ 0 ] + d + date_raw[ 1: ]    
+                y = dat[ 4: ]
+                print(dat)            
+                date_mod = y + "-" + dat[ :2 ] + "-" + dat[ 2:4 ] 
             else:
-                y = date_raw[3:]
-                date_mod = y+"-"+date_raw[:1]+"-"+date_raw[2:3]
+                y = date_raw[ 3: ]
+                date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
             date = date_mod
-            today = int(rows[i][1].replace(",",""))
-            year_ago = int(rows[i][2].replace(",",""))
-            difference = round(float((today/year_ago)*100),2)
+            today = int(rows[ i ][ 1 ].replace(",",""))
+            year_ago = int(rows[ i ][ 2 ].replace(",",""))
             
-            Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference)
+            today_day_before = int(rows[ i-1 ][ 1 ].replace(",",""))
+            year_ago_day_before = int(rows[ i-1 ][ 2 ].replace(",",""))
+            
+            difference = round(float((today / year_ago) * 100),2)
+            if i==0:
+                abs_diff =0
+            else:
+                abs_diff = difference - round(float((today_day_before / year_ago_day_before) * 100),2) 
+                abs_diff = round(abs_diff, 2)
+
+            Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference,absolute=abs_diff)
         return HttpResponseRedirect('/')
     else:
         data_all = Date.objects.all()
