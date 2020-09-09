@@ -58,16 +58,17 @@ def scrape(request):
             else:
                 abs_diff = difference - round(float((today_day_before / year_ago_day_before) * 100),2) 
                 abs_diff = round(abs_diff, 2)
-
-            num_results = Date.objects.filter(date = date).count()
-            
-            if num_results >=1:
-                pass
-            else:
-                Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference,absolute=abs_diff)
+                
+            if Date.objects.all() is not None:
+                num_results = Date.objects.filter(date = date).count()
+                if num_results >=1:
+                    pass
+                else:
+                    Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference,absolute=abs_diff)                
         return HttpResponseRedirect('/')
     else:
         data_all = Date.objects.all()
+        data_all = sorted(data_all, key= lambda u: u.date )
 
     return render(request, 'scraper/result.html',{'data_all':data_all})
 
@@ -80,7 +81,7 @@ def clear(request):
 def csv_database_write(request):
     # Get all data from Date Databse Table
     dates = Date.objects.all()
-
+    sortedDates = sorted(dates, key= lambda u: u.date )
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="csv_dates_dbase_write.csv"'
@@ -88,7 +89,7 @@ def csv_database_write(request):
     writer = csv.writer(response)
     writer.writerow(['date', 'this_year', 'last_year', 'difference', 'absolute'])
 
-    for date in dates:
+    for date in sortedDates:
         writer.writerow([date.date, date.today, date.year_ago, date.difference, date.absolute])
 
     return response
