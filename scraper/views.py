@@ -32,19 +32,28 @@ def scrape(request):
 
         for i in range(z):
             date_raw = rows[ i ][ 0 ].replace("/","")
-            d = "0"
+            d = "0"            
             if len(date_raw) == 7:
-                d = d + date_raw
-                y = d[ 4: ]
-                date_mod = y + "-" + d[:2 ] + "-" + d[ 2:4 ]
+                if date_raw[:2] == "10" or date_raw[:2] == "11" or date_raw[:2] == "12":
+                    if len(date_raw) == 8:
+                        y = date_raw[ 3: ]
+                        date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
+                    else:
+                        d = date_raw[:2] + d + date_raw[2:]
+                        y = date_raw[ 3: ]
+                        date_mod = y + "-" + date_raw[ :2 ]+ "-" + date_raw[ 2:3 ]                        
+                else:
+                    d = d + date_raw
+                    y = d[ 4: ]
+                    date_mod = y + "-" + d[:2 ] + "-" + d[ 2:4 ]
             elif len(date_raw) == 6:                
                 dat = d + date_raw[ 0 ] + d + date_raw[ 1: ]    
-                y = dat[ 4: ]
-                print(dat)            
+                y = dat[ 4: ]                            
                 date_mod = y + "-" + dat[ :2 ] + "-" + dat[ 2:4 ] 
             else:
                 y = date_raw[ 3: ]
                 date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
+            
             date = date_mod
             today = int(rows[ i ][ 1 ].replace(",",""))
             year_ago = int(rows[ i ][ 2 ].replace(",",""))
