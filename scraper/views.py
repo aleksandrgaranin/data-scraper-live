@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponseRedirect,HttpResponse
 from .models import Date
 import csv
+import numpy as np
 
 
 
@@ -12,36 +13,52 @@ import csv
 def scrape(request):
     if request.method == "POST":
         
-        page = requests.get('https://www.tsa.gov/coronavirus/passenger-throughput')
-        soup = BeautifulSoup(page.text, 'html.parser')
+        pageTue = requests.get('https://www.tsa.gov/coronavirus/passenger-throughput?page=0');
+        pageOne = requests.get('https://www.tsa.gov/coronavirus/passenger-throughput?page=1');
+        soupOne = BeautifulSoup(pageOne.text, 'html.parser');
+        soupTue = BeautifulSoup(pageTue.text, 'html.parser');
 
-        rows =[]        
-        z = 0
-        trs = soup.find_all('tr')
-        trs = trs[1:]
-
-        for tr in trs: # for every table row
-            rows.append([td.get_text(strip=True) for td in tr.find_all('td')]) # data row
+        rowsOne =[]    
+        rowsTue =[]      
+        zOne = 0
+        zTue = 0
+        trsOne = soupOne.find_all('tr')
+        trsTue = soupTue.find_all('tr')
+        trsOne = trsOne[1:]
+        trsTue = trsTue[1:]
+       
+        for tr in trsOne: # for every table row
+            rowsOne.append([td.get_text(strip=True) for td in tr.find_all('td')]) # data row
         
-        for row in rows:
+        for tr in trsTue: # for every table row
+            rowsTue.append([td.get_text(strip=True) for td in tr.find_all('td')]) # data row
+        
+        for row in rowsOne:
             if row == []:
-                rows.remove(row)      
-            z=z+1
-        
-        rows = rows[::-1]
+                rowsOne.remove(row)      
+            zOne=zOne+1
 
-        for i in range(z):
-            date_raw = rows[ i ][ 0 ].replace("/","")
-            d = "0"            
+        for row in rowsTue:
+            if row == []:
+                rowsTue.remove(row)      
+            zTue=zTue+1
+        
+        rowsOne = rowsOne[::-1]
+        rowsTue = rowsTue[::-1]
+        
+        for i in range(zOne):
+            date_raw = rowsOne[ i ][ 0 ].replace("/","")
+            d = "0"
+            print(date_raw)
             if len(date_raw) == 7:
                 if date_raw[:2] == "10" or date_raw[:2] == "11" or date_raw[:2] == "12":
-                    if len(date_raw) == 8:
+                    if len(date_raw) == 7:
                         y = date_raw[ 3: ]
-                        date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
+                        date_mod = y + "-" + date_raw[ :1 ]+ d +"-" + date_raw[ 2:3 ]
                     else:
                         d = date_raw[:2] + d + date_raw[2:]
                         y = date_raw[ 3: ]
-                        date_mod = y + "-" + date_raw[ :2 ]+ "-" + date_raw[ 2:3 ]                        
+                        date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
                 else:
                     d = d + date_raw
                     y = d[ 4: ]
@@ -51,15 +68,63 @@ def scrape(request):
                 y = dat[ 4: ]                            
                 date_mod = y + "-" + dat[ :2 ] + "-" + dat[ 2:4 ] 
             else:
-                y = date_raw[ 3: ]
-                date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
+                y = date_raw[ 4: ]
+                date_mod = y + "-" + date_raw[ :2 ]+ "-" + date_raw[ 2:4 ]
             
             date = date_mod
-            today = int(rows[ i ][ 1 ].replace(",",""))
-            year_ago = int(rows[ i ][ 2 ].replace(",",""))
+            print(date)
+            today = int(rowsOne[ i ][ 1 ].replace(",",""))
+            year_ago = int(rowsOne[ i ][ 2 ].replace(",",""))
             
-            today_day_before = int(rows[ i-1 ][ 1 ].replace(",",""))
-            year_ago_day_before = int(rows[ i-1 ][ 2 ].replace(",",""))
+            today_day_before = int(rowsOne[ i-1 ][ 1 ].replace(",",""))
+            year_ago_day_before = int(rowsOne[ i-1 ][ 2 ].replace(",",""))
+            
+            difference = round(float((today / year_ago) * 100),2)
+            if i==0:
+                abs_diff =0
+            else:
+                abs_diff = difference - round(float((today_day_before / year_ago_day_before) * 100),2) 
+                abs_diff = round(abs_diff, 2)
+
+            if Date.objects.all() is not None:
+                num_results = Date.objects.filter(date = date).count()
+                if num_results >=1:
+                    pass
+                else:
+                    Date.objects.create(date=date,today=today,year_ago=year_ago,difference=difference,absolute=abs_diff)
+
+        for i in range(zTue):
+            date_raw = rowsTue[ i ][ 0 ].replace("/","")
+            d = "0"
+            print(date_raw)
+            if len(date_raw) == 7:
+                if date_raw[:2] == "10" or date_raw[:2] == "11" or date_raw[:2] == "12":
+                    if len(date_raw) == 7:
+                        y = date_raw[ 3: ]
+                        date_mod = y + "-" + date_raw[ :1 ]+ d +"-" + date_raw[ 2:3 ]
+                    else:
+                        d = date_raw[:2] + d + date_raw[2:]
+                        y = date_raw[ 3: ]
+                        date_mod = y + "-" + date_raw[ :1 ]+ "-" + date_raw[ 2:3 ]
+                else:
+                    d = d + date_raw
+                    y = d[ 4: ]
+                    date_mod = y + "-" + d[:2 ] + "-" + d[ 2:4 ]
+            elif len(date_raw) == 6:                
+                dat = d + date_raw[ 0 ] + d + date_raw[ 1: ]    
+                y = dat[ 4: ]                            
+                date_mod = y + "-" + dat[ :2 ] + "-" + dat[ 2:4 ] 
+            else:
+                y = date_raw[ 4: ]
+                date_mod = y + "-" + date_raw[ :2 ]+ "-" + date_raw[ 2:4 ]
+            
+            date = date_mod
+            print(date)
+            today = int(rowsTue[ i ][ 1 ].replace(",",""))
+            year_ago = int(rowsTue[ i ][ 2 ].replace(",",""))
+            
+            today_day_before = int(rowsTue[ i-1 ][ 1 ].replace(",",""))
+            year_ago_day_before = int(rowsTue[ i-1 ][ 2 ].replace(",",""))
             
             difference = round(float((today / year_ago) * 100),2)
             if i==0:
