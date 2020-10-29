@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponseRedirect,HttpResponse
 from .models import Date
 import csv
-import numpy as np
+
 
 
 
